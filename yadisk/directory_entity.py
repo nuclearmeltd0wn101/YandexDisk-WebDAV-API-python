@@ -8,7 +8,8 @@ from yadisk.file_entity import FileEntity
 
 class DirectoryEntity(GenericEntity):
     @staticmethod
-    def from_data(api, data, path, mandatory_refresh=True):
+    def from_data(api, data, path: str,
+                  mandatory_refresh: bool = True) -> GenericEntity:
         if isinstance(data, dict):
             if "file_url" in data['d:propstat']['d:prop']:
                 return FileEntity(api, path, data, mandatory_refresh)
@@ -30,7 +31,7 @@ class DirectoryEntity(GenericEntity):
         return f"<DirectoryEntity: {self.name} (" \
             + f"at {self._api.username}@YandexDisk: {self.path})>"
 
-    def _data(self, should_refresh=False):
+    def _data(self, should_refresh: bool = False):
         must_refresh = self._mandatory_refresh and should_refresh
         if must_refresh:
             self._mandatory_refresh = False
@@ -62,7 +63,10 @@ class DirectoryEntity(GenericEntity):
         return self.__self
 
     @property
-    def items(self):
+    def items(self) -> list:
+        """
+            List of this folder content
+        """
         if self._items == None or self._mandatory_refresh:
             self._data(True)
         return self._items

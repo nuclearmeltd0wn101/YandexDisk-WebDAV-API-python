@@ -2,11 +2,8 @@ from yadisk.api import YandexDisk
 from yadisk.directory_entity import DirectoryEntity
 from yadisk.file_entity import FileEntity
 
-# don't use your account password - use one from app passwords
-# https://yandex.ru/support/id/authorization/app-passwords.html
-
-username = "<<USERNAME HERE>>"
-password = "<<PASSWORD HERE>>"
+# paste your ussername and app password in secret.py
+from secret import username, password
 
 
 def __main__():
@@ -20,7 +17,8 @@ def __main__():
     used_in_mib = api.space_used_bytes / 2 ** 20
     available_in_mib = api.space_available_bytes / 2 ** 20
     print(f"Successfully logged in as {api.username}")
-    print(f"Remote drive usage: {used_in_mib:.2f} MiB used, {available_in_mib:.2f} Mib available")
+    print(f"Remote drive usage: {used_in_mib:.2f} MiB used, "
+          + f"{available_in_mib:.2f} Mib available")
     print("Enumerating remote drive tree..\n")
 
     root = api.get_entity()  # equals to get_entity("/")
@@ -32,7 +30,8 @@ def __main__():
         entity = stack.pop()
         if isinstance(entity, FileEntity):
             size_in_mib = entity.size_bytes / 2 ** 20
-            print(f"{entity.path} -- is file: size {size_in_mib:.2f} MiB, MIME type: {entity.mime_type}")
+            print(f"{entity.path} -- is file: size {size_in_mib:.2f} MiB, "
+                  + f"MIME type: {entity.mime_type}")
         if isinstance(entity, DirectoryEntity):
             print(f"{entity.path} -- is directory")
             for child in entity.items:
@@ -43,4 +42,3 @@ def __main__():
 
 if __name__ == "__main__":
     __main__()
-    

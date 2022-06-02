@@ -1,6 +1,7 @@
 from urllib import request, error
 from urllib.parse import urljoin, quote
 from xmltodict import parse
+from yadisk.generic_entity import GenericEntity
 from yadisk.directory_entity import DirectoryEntity
 
 import posixpath
@@ -29,7 +30,8 @@ class YandexDisk:
     def username(self) -> str:
         return self._username
 
-    def _request(self, path, method="PROPFIND", body=b"", headers=None):
+    def _request(self, path: str, method: str = "PROPFIND",
+                 body: bytes = b"", headers: dict = None) -> bytes:
         if not headers:
             headers = {
                 "Depth": 1
@@ -47,7 +49,7 @@ class YandexDisk:
                 raise PermissionError("Authentication failure")
             raise
 
-    def _get_entity(self, path):
+    def _get_entity(self, path: str):
         try:
             response = self._request(path)
         except error.HTTPError as e:
@@ -59,13 +61,22 @@ class YandexDisk:
         data = parse(response)
         return data['d:multistatus']['d:response']
 
-    def get_entity(self, path="/"):
+    def get_entity(self, path: str = "/") -> GenericEntity:
+        """
+            Retrieve entity information from remote server.
+            If path isn't specified, retrieves root directory
+        """
         path = posixpath.realpath(posixpath.join("/", path))
         data = self._get_entity(path)
         return DirectoryEntity.from_data(self, data, path, False)
 
-    def _move(self, source_path,
-              destination_path, allow_overwrite=False) -> None:
+    def move(self, source_path: str,
+             destination_path: str, allow_overwrite: bool = False) -> None:
+        """
+            Moves entity with source_path to destination_math
+            Destination path base dir must exist
+            Use allow_overwrite to decide, whether destination overwrite is allowed (default: False)
+        """
         source_path = posixpath.realpath(posixpath.join("/", source_path))
         destination_path = posixpath.realpath(
             posixpath.join("/", destination_path))
@@ -86,9 +97,9 @@ class YandexDisk:
                 raise NotADirectoryError(
                     f"{destination_path} contains nonexistent directory")
 
-            raise NotImplementedError(f"Status code {e.code}")
+            raise NotImplementedError(f"Server returned status code {e.code}")
 
-    def _get_space_info(self, path="/"):
+    def _get_space_info(self) -> dict:
         body = """<D:propfind xmlns:D="DAV:">
   <D:prop>
     <D:quota-available-bytes/>
@@ -96,14 +107,20 @@ class YandexDisk:
   </D:prop>
 </D:propfind>""".encode("utf-8")
 
-        response = self._request(path, body=body)
+        response = self._request("/", body=body)
         data = parse(response)
         return data['d:multistatus']['d:response'][0]['d:propstat']['d:prop']
 
     @property
-    def space_used_bytes(self):
+    def space_used_bytes(self) -> int:
+        """
+            Remote storage used space in bytes
+        """
         return int(self._get_space_info()['d:quota-used-bytes'])
 
     @property
-    def space_available_bytes(self):
+    def space_available_bytes(self) -> int:
+        """
+            Remote storage available (free) space in bytes
+        """
         return int(self._get_space_info()['d:quota-available-bytes'])
